@@ -1,31 +1,10 @@
 import { StatusBar } from 'expo-status-bar';
-import { Text, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
-function ExpeditionScreen() {
-  return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-      <Text>Expedition planen</Text>
-    </View>
-  );
-}
-
-function FundeScreen() {
-  return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-      <Text>Funde</Text>
-    </View>
-  );
-}
-
-function ArchivScreen() {
-  return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-      <Text>Archiv</Text>
-    </View>
-  );
-}
+import ExpeditionScreen from './src/screens/ExpeditionScreen';
+import FundeScreen from './src/screens/FundeScreen';
+import ArchivScreen from './src/screens/ArchivScreen';
 
 const Tab = createBottomTabNavigator();
 
