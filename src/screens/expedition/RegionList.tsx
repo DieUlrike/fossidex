@@ -1,12 +1,6 @@
 import { View, Text, FlatList, Pressable } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-
-type Region = { id: string; name: string };
-const REGIONS: Region[] = [
-  { id: "ostsee", name: "Ostsee" },
-  { id: "ruegen", name: "Rügen" },
-  { id: "alb", name: "Schwäbische Alb" },
-];
+import regions from "../../data/regions.json"; // <-- Import unserer JSON-Datei
 
 type ExpeditionStackParamList = {
   RegionList: undefined;
@@ -20,7 +14,7 @@ export default function RegionList({ navigation }: Props) {
     <View style={{ flex: 1, padding: 16 }}>
       <Text style={{ fontSize: 18, marginBottom: 12 }}>Region wählen</Text>
       <FlatList
-        data={REGIONS}
+        data={regions} // <-- Daten kommen jetzt aus JSON
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <Pressable

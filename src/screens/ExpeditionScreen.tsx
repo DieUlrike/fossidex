@@ -15,7 +15,7 @@ export default function ExpeditionScreen() {
       <Stack.Screen
       name="RegionList"
       component={RegionList}
-      options={{ headerShown: false }}
+      options={{ title: "Regionen" }}
     />
       <Stack.Screen
         name="RegionDetail"

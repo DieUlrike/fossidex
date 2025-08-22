@@ -1,0 +1,17 @@
+[
+  {
+    "id": "ostsee",
+    "name": "Ostsee",
+    "fossils": ["Bernstein", "Seeigel", "Donnerkeil"]
+  },
+  {
+    "id": "ruegen",
+    "name": "Rügen",
+    "fossils": ["Ammonit", "Seeigel"]
+  },
+  {
+    "id": "alb",
+    "name": "Schwäbische Alb",
+    "fossils": ["Ammonit", "Belemnit", "Muscheln"]
+  }
+]
