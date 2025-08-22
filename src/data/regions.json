@@ -2,16 +2,26 @@
   {
     "id": "ostsee",
     "name": "Ostsee",
-    "fossils": ["Bernstein", "Seeigel", "Donnerkeil"]
+    "fossils": ["Bernstein", "Seeigel", "Donnerkeil"],
+    "locations": [
+      { "id": "timmendorf", "name": "Timmendorfer Strand" },
+      { "id": "kuehlungsborn", "name": "Kühlungsborn" }
+    ]
   },
   {
-    "id": "ruegen",
-    "name": "Rügen",
-    "fossils": ["Ammonit", "Seeigel"]
+    "id": "holzmaden",
+    "name": "Holzmaden",
+    "fossils": ["Ammonit", "Belemnit", "Seelilien"],
+    "locations": [
+      { "id": "steinbruch1", "name": "Steinbruch Holzmaden" }
+    ]
   },
   {
-    "id": "alb",
-    "name": "Schwäbische Alb",
-    "fossils": ["Ammonit", "Belemnit", "Muscheln"]
+    "id": "bayern",
+    "name": "Bayern",
+    "fossils": ["Trilobit", "Brachiopode"],
+    "locations": [
+      { "id": "solnhofen", "name": "Solnhofener Plattenkalk" }
+    ]
   }
 ]

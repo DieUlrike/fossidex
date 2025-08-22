@@ -1,6 +1,6 @@
 import { View, Text, FlatList, Pressable, Alert } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-// Pfad: RegionDetail liegt in src/screens/expedition/, data liegt parallel zu screens/
+// RegionDetail liegt in src/screens/expedition/, data liegt parallel zu screens/
 import regions from "../../data/regions.json";
 
 type ExpeditionStackParamList = {
@@ -13,14 +13,8 @@ type Props = NativeStackScreenProps<ExpeditionStackParamList, "RegionDetail">;
 type Region = {
   id: string;
   name: string;
-  fossils: string[]; // einfache Liste von Namen (Dummy-Phase)
-};
-
-// (optional) Platzhalter: eigene Locations in dieser Region – später aus DB
-const MY_LOCATIONS_BY_REGION: Record<string, { id: string; name: string; visitedAt?: string }[]> = {
-  // Beispiel, falls du schon was sehen willst:
-  ostsee: [{ id: "timmendorf", name: "Timmendorfer Strand", visitedAt: "2025-08-10" }],
-  alb: [{ id: "holzmaden", name: "Steinbruch Holzmaden", visitedAt: "2025-07-28" }],
+  fossils: string[]; // einfache Namen in der Seed-Phase
+  locations?: { id: string; name: string }[];
 };
 
 export default function RegionDetail({ route }: Props) {
@@ -29,7 +23,7 @@ export default function RegionDetail({ route }: Props) {
   // Region aus JSON holen
   const region: Region | undefined = (regions as Region[]).find((r) => r.id === regionId);
   const fossils = region?.fossils ?? [];
-  const myLocations = MY_LOCATIONS_BY_REGION[regionId] ?? [];
+  const locations = region?.locations ?? [];
 
   if (!region) {
     return (
@@ -43,11 +37,14 @@ export default function RegionDetail({ route }: Props) {
 
   return (
     <View style={{ flex: 1, padding: 16, gap: 16 }}>
-      {/* Titel kommt aus dem Header; hier lassen wir nur Inhalte */}
+      {/* Titel steht im Header; hier nur Inhalte */}
 
       {/* Abschnitt: Typische Fossilien */}
       <View>
-        <Text style={{ fontWeight: "600", marginBottom: 8 }}>Typische Fossilien hier</Text>
+        <Text style={{ fontWeight: "600", marginBottom: 8 }}>
+          Typische Fossilien hier
+        </Text>
+
         {fossils.length === 0 ? (
           <Text style={{ color: "#666" }}>Keine Fossilien eingetragen.</Text>
         ) : (
@@ -70,9 +67,9 @@ export default function RegionDetail({ route }: Props) {
               >
                 <Text>{name}</Text>
                 <Pressable
-                  onPress={() => {
-                    Alert.alert("Gefunden!", `${name} erfassen – Dialog kommt als Nächstes`);
-                  }}
+                  onPress={() =>
+                    Alert.alert("Gefunden!", `${name} erfassen – Dialog kommt als Nächstes`)
+                  }
                   style={{
                     paddingHorizontal: 12,
                     paddingVertical: 8,
@@ -89,14 +86,17 @@ export default function RegionDetail({ route }: Props) {
         )}
       </View>
 
-      {/* Abschnitt: Meine Locations */}
+      {/* Abschnitt: Meine Locations aus JSON (Seed) */}
       <View>
-        <Text style={{ fontWeight: "600", marginBottom: 8 }}>Meine Locations in dieser Region</Text>
-        {myLocations.length === 0 ? (
-          <Text style={{ color: "#666" }}>Noch keine Locations angelegt.</Text>
+        <Text style={{ fontWeight: "600", marginBottom: 8 }}>
+          Meine Locations in dieser Region
+        </Text>
+
+        {locations.length === 0 ? (
+          <Text style={{ color: "#666" }}>Noch keine Locations eingetragen.</Text>
         ) : (
           <FlatList
-            data={myLocations}
+            data={locations}
             keyExtractor={(l) => l.id}
             renderItem={({ item }) => (
               <View
@@ -110,13 +110,11 @@ export default function RegionDetail({ route }: Props) {
                 }}
               >
                 <Text style={{ fontSize: 16 }}>{item.name}</Text>
-                {item.visitedAt ? (
-                  <Text style={{ color: "#666" }}>Besucht am {item.visitedAt}</Text>
-                ) : null}
               </View>
             )}
           />
         )}
+
         <Pressable
           onPress={() => Alert.alert("Neue Location", "Formular kommt gleich")}
           style={{
