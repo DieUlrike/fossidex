@@ -13,8 +13,8 @@ export default function App() {
     <NavigationContainer>
       <Tab.Navigator>
         <Tab.Screen name="Expedition planen" component={ExpeditionScreen} />
-        <Tab.Screen name="Funde" component={FundeScreen} />
-        <Tab.Screen name="Archiv" component={ArchivScreen} />
+        <Tab.Screen name="Funde dokumentieren" component={FundeScreen} />
+        <Tab.Screen name="Archiv durchstöbern" component={ArchivScreen} />
       </Tab.Navigator>
       <StatusBar style="auto" />
     </NavigationContainer>
