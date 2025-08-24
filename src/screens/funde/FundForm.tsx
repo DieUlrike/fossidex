@@ -2,7 +2,10 @@ import React, { useEffect, useMemo, useState } from "react";
 import { View, Text, TextInput, Button, Alert } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import { useRoute } from "@react-navigation/native";
+
+// Daten & Context
 import regionsData from "../../data/regions.json";
+import { useFundContext } from "../../context/FundContext";
 
 type Region = {
   id: string;
@@ -24,6 +27,7 @@ export default function FundForm() {
   const params = (route.params || {}) as RouteParams;
 
   const regions = regionsData as Region[];
+  const { addFund } = useFundContext();
 
   // Alle Fossilien global (alphabetisch) – Fossil ist frei wählbar
   const allFossils = useMemo(() => {
@@ -32,7 +36,7 @@ export default function FundForm() {
     return Array.from(set).sort((a, b) => a.localeCompare(b, "de"));
   }, [regions]);
 
-  // Alle Locations (mit regionId für Ableitung)
+  // Alle Locations (inkl. regionId) – zum Ableiten, falls nur Location vorgegeben ist
   const allLocations = useMemo(
     () => regions.flatMap((r) => (r.locations ?? []).map((l) => ({ ...l, regionId: r.id }))),
     [regions]
@@ -46,7 +50,7 @@ export default function FundForm() {
   const [note, setNote] = useState<string>("");
   const [date, setDate] = useState<string>("");
 
-  // Vorbelegung (z. B. von „Gefunden!“)
+  // Vorbelegung aus Params (z. B. aus „Gefunden!“)
   useEffect(() => {
     if (params.fossilName) setFossil(params.fossilName);
     if (params.locationId) {
@@ -58,30 +62,29 @@ export default function FundForm() {
     }
   }, [params.fossilName, params.regionId, params.locationId, allLocations]);
 
-  // Location-Optionen hängen nur von Region ab
+  // Location-Optionen hängen nur von der gewählten Region ab
   const possibleLocations = useMemo(() => {
     const r = regions.find((x) => x.id === regionId);
     return r?.locations ?? [];
   }, [regions, regionId]);
 
-  // Konsistenzen: wenn Region wechselt → Location-Choice zurücksetzen
+  // Konsistenz: bei Regionswechsel Location zurücksetzen
   useEffect(() => {
     setLocationId("");
     setNewLocationName("");
   }, [regionId]);
 
-  // Wenn der Nutzer eine Location wählt, die in einer anderen Region liegt → Region automatisch setzen
+  // Falls Nutzer manuell eine Location wählt, die einer anderen Region angehört → Region automatisch anpassen
   useEffect(() => {
-    if (!locationId) return;
-    if (locationId === NEW_LOCATION_VALUE) return;
+    if (!locationId || locationId === NEW_LOCATION_VALUE) return;
     const loc = allLocations.find((l) => l.id === locationId);
     if (loc && loc.regionId !== regionId) {
       setRegionId(loc.regionId);
     }
   }, [locationId, regionId, allLocations]);
 
-  // Info-Hinweis: Ist das gewählte Fossil „typisch“ für die gewählte Region?
-  const fossilRegionCheck = useMemo(() => {
+  // Hinweis: Ist Fossil in der gewählten Region „typisch“? (nur Hinweis, keine Blockade)
+  const isTypicalHere = useMemo(() => {
     if (!fossil || !regionId) return null;
     const r = regions.find((x) => x.id === regionId);
     return r ? r.fossils.includes(fossil) : null;
@@ -108,12 +111,18 @@ export default function FundForm() {
       newLocationName: locationId === NEW_LOCATION_VALUE ? newLocationName.trim() : null,
       date,
       note,
-      // Optional: isTypical: fossilRegionCheck === true
     };
 
-    console.log("Neuer Fund (noch nicht persistent):", payload);
-    Alert.alert("Gespeichert", "Fund erfasst (noch nicht dauerhaft).");
-    // TODO: später in zentralen State/SQLite persistieren und Formular resetten
+    addFund(payload); // <-- zentral speichern
+    Alert.alert("Gespeichert", "Fund erfasst!");
+
+    // Einfacher Reset (optional)
+    setFossil("");
+    setRegionId("");
+    setLocationId("");
+    setNewLocationName("");
+    setNote("");
+    setDate("");
   };
 
   return (
@@ -129,7 +138,7 @@ export default function FundForm() {
         ))}
       </Picker>
 
-      {/* Region (frei wählbar, unabhängig vom Fossil) */}
+      {/* Region (frei wählbar) */}
       <Text style={{ marginBottom: 8 }}>Region:</Text>
       <Picker selectedValue={regionId} onValueChange={setRegionId} style={{ marginBottom: 8 }}>
         <Picker.Item label="Bitte wählen..." value="" />
@@ -138,8 +147,8 @@ export default function FundForm() {
         ))}
       </Picker>
 
-      {/* Hinweis, falls Fossil nicht in der typischen Liste dieser Region ist */}
-      {fossilRegionCheck === false && fossil && regionId ? (
+      {/* Hinweis, wenn Kombination untypisch ist */}
+      {isTypicalHere === false && fossil && regionId ? (
         <Text style={{ color: "#a66", marginBottom: 12 }}>
           Hinweis: „{fossil}“ ist für „{regions.find((r) => r.id === regionId)?.name}“ nicht in der Typenliste.
           Du kannst den Fund trotzdem speichern.
