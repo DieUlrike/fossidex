@@ -5,7 +5,7 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import ExpeditionScreen from "./src/screens/ExpeditionScreen";
 import FundeScreen from "./src/screens/FundeScreen";
 import ArchivScreen from "./src/screens/ArchivScreen";
-import { FundProvider } from "./src/context/FundContext"; // neu
+import { FundProvider } from "./src/context/FundContext";
 
 const Tab = createBottomTabNavigator();
 

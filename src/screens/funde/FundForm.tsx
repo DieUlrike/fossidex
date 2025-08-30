@@ -46,29 +46,24 @@ export default function FundForm() {
     [regions]
   );
 
-  // ---------- Formular-States ----------
+  // ---- Form State ----
   const [fossil, setFossil] = useState("");
   const [regionId, setRegionId] = useState("");
   const [locationId, setLocationId] = useState("");
   const [newLocationName, setNewLocationName] = useState("");
 
-  // Notiz wird in einem Modal ohne ScrollView editiert (stabil auf iOS)
+  // Notiz im Modal
   const [note, setNote] = useState("");
   const [noteModalVisible, setNoteModalVisible] = useState(false);
   const [noteDraft, setNoteDraft] = useState("");
 
-  // Datum über drei Picker (keine Tastatur)
-  const [year, setYear] = useState("");
-  const [month, setMonth] = useState(""); // "01".."12"
-  const [day, setDay] = useState("");     // "01".."31"
+  // Datum über drei Picker (YYYY-MM-DD)
+  const now = new Date();
+  const [year, setYear] = useState<number>(now.getFullYear());
+  const [month, setMonth] = useState<number>(now.getMonth() + 1); // 1-12
+  const [day, setDay] = useState<number>(now.getDate());
 
-  // abgeleitet: gültiges Datum als YYYY-MM-DD (oder "")
-  const fullDate = useMemo(() => {
-    if (!year || !month || !day) return "";
-    return `${year}-${month}-${day}`;
-  }, [year, month, day]);
-
-  // ---------- Prefill aus Navigation ----------
+  // Prefill aus Navigation
   useEffect(() => {
     if (params.fossilName) setFossil(params.fossilName);
     if (params.locationId) {
@@ -85,77 +80,64 @@ export default function FundForm() {
     return r?.locations ?? [];
   }, [regions, regionId]);
 
-  // Bei Regionswechsel zugehörige Location zurücksetzen
+  // Location reset, wenn Region wechselt
   useEffect(() => {
     setLocationId("");
   }, [regionId]);
 
-  // Wenn existierende Location anderer Region gewählt wird → Region angleichen
+  // Wenn vorhandene Location einer anderen Region gewählt wird → Region anpassen
   useEffect(() => {
     if (!locationId || locationId === NEW_LOCATION_VALUE) return;
     const loc = allLocations.find((l) => l.id === locationId);
     if (loc && loc.regionId !== regionId) setRegionId(loc.regionId);
   }, [locationId, regionId, allLocations]);
 
-  // Hinweis „typisch“/„untypisch“
+  // Datum: Tage pro Monat
+  const daysInMonth = useMemo(() => {
+    const isLeap = (y: number) => (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
+    const map: Record<number, number> = {
+      1: 31, 2: isLeap(year) ? 29 : 28, 3: 31, 4: 30,
+      5: 31, 6: 30, 7: 31, 8: 31, 9: 30, 10: 31, 11: 30, 12: 31,
+    };
+    return map[month] ?? 30;
+  }, [year, month]);
+
+  useEffect(() => {
+    if (day > daysInMonth) setDay(daysInMonth);
+  }, [daysInMonth, day]);
+
   const isTypicalHere = useMemo(() => {
     if (!fossil || !regionId) return null;
     const r = regions.find((x) => x.id === regionId);
     return r ? r.fossils.includes(fossil) : null;
   }, [fossil, regionId, regions]);
 
-  // ---------- Datum: Hilfen ----------
-  const currentYear = new Date().getFullYear();
-  const years = useMemo(() => {
-    // 150 Jahre zurück bis aktuellem Jahr
-    return Array.from({ length: 151 }, (_, i) => (currentYear - i).toString());
-  }, [currentYear]);
+  const buildDateString = () => {
+    const mm = String(month).padStart(2, "0");
+    const dd = String(day).padStart(2, "0");
+    return `${year}-${mm}-${dd}`;
+    // Hinweis: wir speichern als ISO YYYY-MM-DD
+  };
 
-  const months = useMemo(() => {
-    return ["01","02","03","04","05","06","07","08","09","10","11","12"];
-  }, []);
-
-  const daysInSelectedMonth = useMemo(() => {
-    if (!year || !month) return 31;
-    const y = parseInt(year, 10);
-    const m = parseInt(month, 10);
-    // Trick: Tag 0 des Folgemonats ist letzter Tag des gewünschten Monats
-    return new Date(y, m, 0).getDate();
-  }, [year, month]);
-
-  const days = useMemo(() => {
-    return Array.from({ length: daysInSelectedMonth }, (_, i) => (i + 1).toString().padStart(2, "0"));
-  }, [daysInSelectedMonth]);
-
-  // Falls Monat/Jahr so geändert wurden, dass der bisherige Tag zu groß wäre → Tag resetten
-  useEffect(() => {
-    if (!day) return;
-    const d = parseInt(day, 10);
-    if (d > daysInSelectedMonth) setDay("");
-  }, [daysInSelectedMonth, day]);
-
-  // ---------- Speichern ----------
   const handleSave = () => {
     if (!fossil) return Alert.alert("Hinweis", "Bitte ein Fossil auswählen.");
     if (!regionId) return Alert.alert("Hinweis", "Bitte eine Region auswählen.");
     if (locationId === NEW_LOCATION_VALUE && !newLocationName.trim()) {
       return Alert.alert("Hinweis", "Bitte den Namen der neuen Location eingeben.");
     }
-    // Datum ist optional – wenn unvollständig, speichern wir leeren String
-    const date = fullDate;
 
     addFund({
       fossil,
       regionId,
       locationId: locationId && locationId !== NEW_LOCATION_VALUE ? locationId : null,
       newLocationName: locationId === NEW_LOCATION_VALUE ? newLocationName.trim() : null,
-      date,
+      date: buildDateString(),
       note,
     });
     Alert.alert("Gespeichert", "Fund erfasst!");
   };
 
-  // ---------- UI Helfer ----------
+  // ---- UI Helfer ----
   const Field: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
     <View style={{ marginBottom: 24 }}>
       <Text style={{ marginBottom: 8, fontWeight: "600" }}>{label}</Text>
@@ -163,21 +145,17 @@ export default function FundForm() {
     </View>
   );
 
-  const PickerBox: React.FC<{ children: React.ReactNode; style?: any }> = ({ children, style }) => (
+  const PickerBox: React.FC<{ children: React.ReactNode }> = ({ children }) => (
     <View
-      style={[
-        {
-          borderWidth: 1,
-          borderColor: "#ddd",
-          borderRadius: 12,
-          overflow: "hidden",
-          backgroundColor: "#f7f7f8",
-          height: PICKER_HEIGHT,
-          justifyContent: "center",
-          flex: 1,
-        },
-        style,
-      ]}
+      style={{
+        borderWidth: 1,
+        borderColor: "#ddd",
+        borderRadius: 12,
+        overflow: "hidden",
+        backgroundColor: "#f7f7f8",
+        height: PICKER_HEIGHT,
+        justifyContent: "center",
+      }}
     >
       {children}
     </View>
@@ -218,39 +196,29 @@ export default function FundForm() {
     </Pressable>
   );
 
-  const DisplayField: React.FC<{ value: string; placeholder: string; onPress: () => void }> = ({
-    value,
-    placeholder,
-    onPress,
-  }) => (
-    <Pressable
-      onPress={onPress}
-      style={{
-        borderWidth: 1,
-        borderColor: "#ccc",
-        padding: 12,
-        borderRadius: 8,
-        minHeight: 44,
-        justifyContent: "center",
-      }}
-    >
-      <Text style={{ color: value ? "#111" : "#888" }}>{value || placeholder}</Text>
-    </Pressable>
-  );
+  // Jahr/Monat/Tag-Optionen
+  const years = useMemo(() => {
+    const list: number[] = [];
+    const maxY = now.getFullYear();
+    for (let y = maxY; y >= 1900; y--) list.push(y);
+    return list;
+  }, [now]);
+
+  const months = [
+    { v: 1, l: "01" }, { v: 2, l: "02" }, { v: 3, l: "03" }, { v: 4, l: "04" },
+    { v: 5, l: "05" }, { v: 6, l: "06" }, { v: 7, l: "07" }, { v: 8, l: "08" },
+    { v: 9, l: "09" }, { v: 10, l: "10" }, { v: 11, l: "11" }, { v: 12, l: "12" },
+  ];
+  const days = useMemo(() => Array.from({ length: daysInMonth }, (_, i) => i + 1), [daysInMonth]);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
-      {/* Scrollen erlaubt, aber KEINE Tastatur im Scroll-Bereich (Notiz geht per Modal) */}
-      <ScrollView
-        contentContainerStyle={{ padding: 16, paddingBottom: 24 }}
-        keyboardShouldPersistTaps="always"
-        keyboardDismissMode="none"
-        contentInsetAdjustmentBehavior="always"
-      >
+      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 24 }}>
         <Text style={{ fontSize: 20, fontWeight: "700", marginBottom: 16 }}>
           Neuen Fund hinzufügen
         </Text>
 
+        {/* Fossil */}
         <Field label="Fossil">
           <PickerBox>
             <Picker selectedValue={fossil} onValueChange={setFossil}>
@@ -262,6 +230,7 @@ export default function FundForm() {
           </PickerBox>
         </Field>
 
+        {/* Region */}
         <Field label="Region">
           <PickerBox>
             <Picker selectedValue={regionId} onValueChange={setRegionId}>
@@ -279,6 +248,7 @@ export default function FundForm() {
           ) : null}
         </Field>
 
+        {/* Location */}
         <Field label="Location (optional)">
           <PickerBox>
             <Picker
@@ -301,7 +271,6 @@ export default function FundForm() {
               placeholder="Name der neuen Location"
               value={newLocationName}
               onChangeText={setNewLocationName}
-              blurOnSubmit={false}
               style={{
                 borderWidth: 1,
                 borderColor: "#ccc",
@@ -313,77 +282,77 @@ export default function FundForm() {
           ) : null}
         </Field>
 
-        {/* Notiz als klickbares Feld → Modal zum Bearbeiten (kein Keyboard im Scrollbereich) */}
+        {/* Notiz (öffnet Modal) */}
         <Field label="Notiz">
-          <DisplayField
-            value={note}
-            placeholder="Tippen zum Bearbeiten…"
+          <Pressable
             onPress={() => {
               setNoteDraft(note);
               setNoteModalVisible(true);
             }}
-          />
+            style={{
+              borderWidth: 1,
+              borderColor: "#ccc",
+              padding: 12,
+              borderRadius: 8,
+              minHeight: 44,
+              justifyContent: "center",
+            }}
+          >
+            <Text style={{ color: note ? "#111" : "#888" }}>
+              {note || "Tippen zum Bearbeiten…"}
+            </Text>
+          </Pressable>
         </Field>
 
-        {/* Datum: drei Picker (Jahr / Monat / Tag), keine Tastatur */}
+        {/* Datum (Jahr/Monat/Tag) */}
         <Field label="Datum">
           <View style={{ flexDirection: "row", gap: 8 }}>
-            <PickerBox style={{ flex: 1.2 }}>
-              <Picker
-                selectedValue={year}
-                onValueChange={(val) => setYear(val)}
-              >
-                <Picker.Item label="Jahr" value="" />
-                {years.map((y) => (
-                  <Picker.Item key={y} label={y} value={y} />
-                ))}
-              </Picker>
-            </PickerBox>
-
-            <PickerBox style={{ flex: 1 }}>
-              <Picker
-                selectedValue={month}
-                onValueChange={(val) => setMonth(val)}
-                enabled={!!year}
-              >
-                <Picker.Item label="Monat" value="" />
-                {months.map((m, idx) => (
-                  <Picker.Item
-                    key={m}
-                    label={`${(idx + 1).toString().padStart(2, "0")}`}
-                    value={m}
-                  />
-                ))}
-              </Picker>
-            </PickerBox>
-
-            <PickerBox style={{ flex: 1 }}>
-              <Picker
-                selectedValue={day}
-                onValueChange={(val) => setDay(val)}
-                enabled={!!year && !!month}
-              >
-                <Picker.Item label="Tag" value="" />
-                {days.map((d) => (
-                  <Picker.Item key={d} label={d} value={d} />
-                ))}
-              </Picker>
-            </PickerBox>
+            <View style={{ flex: 1 }}>
+              <PickerBox>
+                <Picker selectedValue={year} onValueChange={(y) => setYear(Number(y))}>
+                  {years.map((y) => (
+                    <Picker.Item key={y} label={String(y)} value={y} />
+                  ))}
+                </Picker>
+              </PickerBox>
+            </View>
+            <View style={{ width: 120 }}>
+              <PickerBox>
+                <Picker selectedValue={month} onValueChange={(m) => setMonth(Number(m))}>
+                  {months.map((m) => (
+                    <Picker.Item key={m.v} label={m.l} value={m.v} />
+                  ))}
+                </Picker>
+              </PickerBox>
+            </View>
+            <View style={{ width: 120 }}>
+              <PickerBox>
+                <Picker selectedValue={day} onValueChange={(d) => setDay(Number(d))}>
+                  {days.map((d) => (
+                    <Picker.Item key={d} label={String(d).padStart(2, "0")} value={d} />
+                  ))}
+                </Picker>
+              </PickerBox>
+            </View>
           </View>
-
-          {/* Anzeige des zusammengesetzten Datums */}
-          <Text style={{ marginTop: 8, color: fullDate ? "#111" : "#888" }}>
-            {fullDate || "Kein Datum ausgewählt"}
+          <Text style={{ marginTop: 8, color: "#666" }}>
+            Ausgewählt: {buildDateString()}
           </Text>
         </Field>
 
+        {/* Speichern */}
         <View style={{ marginTop: 8 }}>
           <ButtonPrimary title="Speichern" onPress={handleSave} />
         </View>
       </ScrollView>
 
-      {/* -------- Modal-Editor: Notiz (tastaturstabil) -------- */}
-      <Modal visible={noteModalVisible} animationType="slide" presentationStyle="pageSheet">
+      {/* Vollbild-Modal für Notiz */}
+      <Modal
+        visible={noteModalVisible}
+        animationType="none"
+        presentationStyle="fullScreen"
+        onRequestClose={() => setNoteModalVisible(false)}
+      >
         <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
           <View
             style={{
@@ -402,13 +371,13 @@ export default function FundForm() {
             <ButtonGhost
               title="Fertig"
               onPress={() => {
-                setNote(noteDraft);
+                setNote(noteDraft.trim());
                 setNoteModalVisible(false);
               }}
             />
           </View>
 
-          <View style={{ padding: 16 }}>
+          <View style={{ flex: 1, padding: 16 }}>
             <TextInput
               autoFocus
               multiline
@@ -416,11 +385,17 @@ export default function FundForm() {
               onChangeText={setNoteDraft}
               placeholder="z. B. Fund nach Sturm an der Spülsaumkante"
               textAlignVertical="top"
+              blurOnSubmit={false}
+              autoCorrect={false}
+              spellCheck={false}
+              autoComplete="off"
+              textContentType="none"
               style={{
                 borderWidth: 1,
                 borderColor: "#bbb",
                 borderRadius: 10,
                 padding: 12,
+                flex: 1,
                 minHeight: 220,
               }}
             />
