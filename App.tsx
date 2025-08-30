@@ -4,7 +4,7 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 
 import ExpeditionScreen from "./src/screens/ExpeditionScreen";
 import FundeScreen from "./src/screens/FundeScreen";
-import ArchivScreen from "./src/screens/ArchivScreen";
+import SammlungScreen from "./src/screens/SammlungScreen";
 import { FundProvider } from "./src/context/FundContext";
 
 const Tab = createBottomTabNavigator();
@@ -16,7 +16,7 @@ export default function App() {
         <Tab.Navigator>
           <Tab.Screen name="Expedition planen" component={ExpeditionScreen} />
           <Tab.Screen name="Funde dokumentieren" component={FundeScreen} />
-          <Tab.Screen name="Archiv durchstöbern" component={ArchivScreen} />
+          <Tab.Screen name="Sammlung stöbern" component={SammlungScreen} />
         </Tab.Navigator>
         <StatusBar style="auto" />
       </NavigationContainer>
