@@ -2,7 +2,26 @@
   {
     "id": "ostsee",
     "name": "Ostsee",
-    "fossils": ["Bernstein", "Seeigel", "Donnerkeil"],
+    "fossils": [
+      {
+        "id": "bernstein",
+        "name": "Bernstein",
+        "image": "assets/fossils/dummy.png",
+        "imageGray": "assets/fossils/dummy-gray.png"
+      },
+      {
+        "id": "seeigel",
+        "name": "Seeigel",
+        "image": "assets/fossils/dummy.png",
+        "imageGray": "assets/fossils/dummy-gray.png"
+      },
+      {
+        "id": "donnerkeil",
+        "name": "Donnerkeil",
+        "image": "assets/fossils/dummy.png",
+        "imageGray": "assets/fossils/dummy-gray.png"
+      }
+    ],
     "locations": [
       { "id": "timmendorf", "name": "Timmendorfer Strand" },
       { "id": "kuehlungsborn", "name": "Kühlungsborn" }
@@ -11,7 +30,26 @@
   {
     "id": "holzmaden",
     "name": "Holzmaden",
-    "fossils": ["Ammonit", "Belemnit", "Seelilien"],
+    "fossils": [
+      {
+        "id": "ammonit",
+        "name": "Ammonit",
+        "image": "assets/fossils/dummy.png",
+        "imageGray": "assets/fossils/dummy-gray.png"
+      },
+      {
+        "id": "belemnit",
+        "name": "Belemnit",
+        "image": "assets/fossils/dummy.png",
+        "imageGray": "assets/fossils/dummy-gray.png"
+      },
+      {
+        "id": "seelilien",
+        "name": "Seelilien",
+        "image": "assets/fossils/dummy.png",
+        "imageGray": "assets/fossils/dummy-gray.png"
+      }
+    ],
     "locations": [
       { "id": "steinbruch1", "name": "Steinbruch Holzmaden" }
     ]
@@ -19,7 +57,20 @@
   {
     "id": "bayern",
     "name": "Bayern",
-    "fossils": ["Trilobit", "Brachiopode"],
+    "fossils": [
+      {
+        "id": "trilobit",
+        "name": "Trilobit",
+        "image": "assets/fossils/dummy.png",
+        "imageGray": "assets/fossils/dummy-gray.png"
+      },
+      {
+        "id": "brachiopode",
+        "name": "Brachiopode",
+        "image": "assets/fossils/dummy.png",
+        "imageGray": "assets/fossils/dummy-gray.png"
+      }
+    ],
     "locations": [
       { "id": "solnhofen", "name": "Solnhofener Plattenkalk" }
     ]

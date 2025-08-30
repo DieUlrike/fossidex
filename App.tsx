@@ -16,7 +16,7 @@ export default function App() {
         <Tab.Navigator>
           <Tab.Screen name="Expedition planen" component={ExpeditionScreen} />
           <Tab.Screen name="Funde dokumentieren" component={FundeScreen} />
-          <Tab.Screen name="Sammlung stöbern" component={SammlungScreen} />
+          <Tab.Screen name="Sammlung" component={SammlungScreen} />
         </Tab.Navigator>
         <StatusBar style="auto" />
       </NavigationContainer>

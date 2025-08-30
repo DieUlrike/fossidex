@@ -1,4 +1,3 @@
-// src/screens/funde/FundForm.tsx
 import React, { useEffect, useMemo, useState } from "react";
 import {
   View,
@@ -17,10 +16,16 @@ import { useRoute } from "@react-navigation/native";
 import regionsData from "../../data/regions.json";
 import { useFundContext } from "../../context/FundContext";
 
+type FossilData = {
+  id: string;
+  name: string;
+  image: string;
+  imageGray: string;
+};
 type Region = {
   id: string;
   name: string;
-  fossils: string[];
+  fossils: FossilData[];
   locations?: { id: string; name: string }[];
 };
 type RouteParams = Partial<{ fossilName: string; regionId: string; locationId: string }>;
@@ -35,9 +40,10 @@ export default function FundForm() {
   const regions = regionsData as Region[];
   const { addFund } = useFundContext();
 
+  // Alle Fossilnamen alphabetisch
   const allFossils = useMemo(() => {
     const set = new Set<string>();
-    regions.forEach((r) => r.fossils.forEach((f) => set.add(f)));
+    regions.forEach((r) => r.fossils.forEach((f) => set.add(f.name)));
     return Array.from(set).sort((a, b) => a.localeCompare(b, "de"));
   }, [regions]);
 
@@ -46,7 +52,6 @@ export default function FundForm() {
     [regions]
   );
 
-  // ---- Form State ----
   const [fossil, setFossil] = useState("");
   const [regionId, setRegionId] = useState("");
   const [locationId, setLocationId] = useState("");
@@ -57,13 +62,12 @@ export default function FundForm() {
   const [noteModalVisible, setNoteModalVisible] = useState(false);
   const [noteDraft, setNoteDraft] = useState("");
 
-  // Datum über drei Picker (YYYY-MM-DD)
+  // Datum mit 3 Pickern
   const now = new Date();
   const [year, setYear] = useState<number>(now.getFullYear());
-  const [month, setMonth] = useState<number>(now.getMonth() + 1); // 1-12
+  const [month, setMonth] = useState<number>(now.getMonth() + 1);
   const [day, setDay] = useState<number>(now.getDate());
 
-  // Prefill aus Navigation
   useEffect(() => {
     if (params.fossilName) setFossil(params.fossilName);
     if (params.locationId) {
@@ -80,19 +84,15 @@ export default function FundForm() {
     return r?.locations ?? [];
   }, [regions, regionId]);
 
-  // Location reset, wenn Region wechselt
-  useEffect(() => {
-    setLocationId("");
-  }, [regionId]);
+  useEffect(() => setLocationId(""), [regionId]);
 
-  // Wenn vorhandene Location einer anderen Region gewählt wird → Region anpassen
   useEffect(() => {
     if (!locationId || locationId === NEW_LOCATION_VALUE) return;
     const loc = allLocations.find((l) => l.id === locationId);
     if (loc && loc.regionId !== regionId) setRegionId(loc.regionId);
   }, [locationId, regionId, allLocations]);
 
-  // Datum: Tage pro Monat
+  // Tage pro Monat
   const daysInMonth = useMemo(() => {
     const isLeap = (y: number) => (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
     const map: Record<number, number> = {
@@ -101,22 +101,18 @@ export default function FundForm() {
     };
     return map[month] ?? 30;
   }, [year, month]);
-
-  useEffect(() => {
-    if (day > daysInMonth) setDay(daysInMonth);
-  }, [daysInMonth, day]);
+  useEffect(() => { if (day > daysInMonth) setDay(daysInMonth); }, [daysInMonth, day]);
 
   const isTypicalHere = useMemo(() => {
     if (!fossil || !regionId) return null;
     const r = regions.find((x) => x.id === regionId);
-    return r ? r.fossils.includes(fossil) : null;
+    return r ? r.fossils.some((f) => f.name === fossil) : null;
   }, [fossil, regionId, regions]);
 
   const buildDateString = () => {
     const mm = String(month).padStart(2, "0");
     const dd = String(day).padStart(2, "0");
     return `${year}-${mm}-${dd}`;
-    // Hinweis: wir speichern als ISO YYYY-MM-DD
   };
 
   const handleSave = () => {
@@ -137,78 +133,44 @@ export default function FundForm() {
     Alert.alert("Gespeichert", "Fund erfasst!");
   };
 
-  // ---- UI Helfer ----
+  // UI Helfer
   const Field: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
     <View style={{ marginBottom: 24 }}>
       <Text style={{ marginBottom: 8, fontWeight: "600" }}>{label}</Text>
       {children}
     </View>
   );
-
   const PickerBox: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-    <View
-      style={{
-        borderWidth: 1,
-        borderColor: "#ddd",
-        borderRadius: 12,
-        overflow: "hidden",
-        backgroundColor: "#f7f7f8",
-        height: PICKER_HEIGHT,
-        justifyContent: "center",
-      }}
-    >
-      {children}
-    </View>
+    <View style={{
+      borderWidth: 1, borderColor: "#ddd", borderRadius: 12,
+      overflow: "hidden", backgroundColor: "#f7f7f8",
+      height: PICKER_HEIGHT, justifyContent: "center",
+    }}>{children}</View>
   );
-
   const ButtonPrimary: React.FC<{ title: string; onPress: () => void }> = ({ title, onPress }) => (
     <Pressable
       onPress={onPress}
       style={({ pressed }) => ({
-        backgroundColor: "#222",
-        paddingVertical: 14,
-        borderRadius: 12,
-        alignItems: "center",
-        opacity: pressed ? 0.85 : 1,
+        backgroundColor: "#222", paddingVertical: 14,
+        borderRadius: 12, alignItems: "center", opacity: pressed ? 0.85 : 1,
       })}
-      accessibilityRole="button"
-      accessibilityLabel={title}
     >
       <Text style={{ color: "#fff", fontSize: 16, fontWeight: "600" }}>{title}</Text>
     </Pressable>
   );
-
   const ButtonGhost: React.FC<{ title: string; onPress: () => void }> = ({ title, onPress }) => (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => ({
-        backgroundColor: "transparent",
-        paddingVertical: 12,
-        paddingHorizontal: 8,
-        borderRadius: 10,
-        alignItems: "center",
-        opacity: pressed ? 0.6 : 1,
-      })}
-      accessibilityRole="button"
-      accessibilityLabel={title}
-    >
+    <Pressable onPress={onPress} style={{ padding: 8 }}>
       <Text style={{ color: "#222", fontSize: 16, fontWeight: "600" }}>{title}</Text>
     </Pressable>
   );
 
-  // Jahr/Monat/Tag-Optionen
   const years = useMemo(() => {
     const list: number[] = [];
     const maxY = now.getFullYear();
     for (let y = maxY; y >= 1900; y--) list.push(y);
     return list;
   }, [now]);
-
-  const months = [
-    { v: 1, l: "01" }, { v: 2, l: "02" }, { v: 3, l: "03" }, { v: 4, l: "04" },
-    { v: 5, l: "05" }, { v: 6, l: "06" }, { v: 7, l: "07" }, { v: 8, l: "08" },
-    { v: 9, l: "09" }, { v: 10, l: "10" }, { v: 11, l: "11" }, { v: 12, l: "12" },
-  ];
+  const months = Array.from({ length: 12 }, (_, i) => i + 1);
   const days = useMemo(() => Array.from({ length: daysInMonth }, (_, i) => i + 1), [daysInMonth]);
 
   return (
@@ -240,7 +202,6 @@ export default function FundForm() {
               ))}
             </Picker>
           </PickerBox>
-
           {isTypicalHere === false && fossil && regionId ? (
             <Text style={{ color: "#a66", marginTop: 8 }}>
               Hinweis: „{fossil}“ ist für „{regions.find((r) => r.id === regionId)?.name}“ nicht typisch.
@@ -251,11 +212,7 @@ export default function FundForm() {
         {/* Location */}
         <Field label="Location (optional)">
           <PickerBox>
-            <Picker
-              enabled={!!regionId}
-              selectedValue={locationId}
-              onValueChange={setLocationId}
-            >
+            <Picker enabled={!!regionId} selectedValue={locationId} onValueChange={setLocationId}>
               <Picker.Item label={regionId ? "Keine Angabe" : "Zuerst Region wählen"} value="" />
               {possibleLocations.map((loc) => (
                 <Picker.Item key={loc.id} label={loc.name} value={loc.id} />
@@ -265,24 +222,17 @@ export default function FundForm() {
               ) : null}
             </Picker>
           </PickerBox>
-
           {locationId === NEW_LOCATION_VALUE ? (
             <TextInput
               placeholder="Name der neuen Location"
               value={newLocationName}
               onChangeText={setNewLocationName}
-              style={{
-                borderWidth: 1,
-                borderColor: "#ccc",
-                padding: 10,
-                borderRadius: 8,
-                marginTop: 12,
-              }}
+              style={{ borderWidth: 1, borderColor: "#ccc", padding: 10, borderRadius: 8, marginTop: 12 }}
             />
           ) : null}
         </Field>
 
-        {/* Notiz (öffnet Modal) */}
+        {/* Notiz */}
         <Field label="Notiz">
           <Pressable
             onPress={() => {
@@ -290,11 +240,8 @@ export default function FundForm() {
               setNoteModalVisible(true);
             }}
             style={{
-              borderWidth: 1,
-              borderColor: "#ccc",
-              padding: 12,
-              borderRadius: 8,
-              minHeight: 44,
+              borderWidth: 1, borderColor: "#ccc",
+              padding: 12, borderRadius: 8, minHeight: 44,
               justifyContent: "center",
             }}
           >
@@ -304,33 +251,27 @@ export default function FundForm() {
           </Pressable>
         </Field>
 
-        {/* Datum (Jahr/Monat/Tag) */}
+        {/* Datum */}
         <Field label="Datum">
           <View style={{ flexDirection: "row", gap: 8 }}>
-            <View style={{ flex: 1 }}>
+            <View style={{ flex: 2 }}>
               <PickerBox>
                 <Picker selectedValue={year} onValueChange={(y) => setYear(Number(y))}>
-                  {years.map((y) => (
-                    <Picker.Item key={y} label={String(y)} value={y} />
-                  ))}
+                  {years.map((y) => <Picker.Item key={y} label={String(y)} value={y} />)}
                 </Picker>
               </PickerBox>
             </View>
-            <View style={{ width: 120 }}>
+            <View style={{ flex: 1 }}>
               <PickerBox>
                 <Picker selectedValue={month} onValueChange={(m) => setMonth(Number(m))}>
-                  {months.map((m) => (
-                    <Picker.Item key={m.v} label={m.l} value={m.v} />
-                  ))}
+                  {months.map((m) => <Picker.Item key={m} label={String(m).padStart(2, "0")} value={m} />)}
                 </Picker>
               </PickerBox>
             </View>
-            <View style={{ width: 120 }}>
+            <View style={{ flex: 1 }}>
               <PickerBox>
                 <Picker selectedValue={day} onValueChange={(d) => setDay(Number(d))}>
-                  {days.map((d) => (
-                    <Picker.Item key={d} label={String(d).padStart(2, "0")} value={d} />
-                  ))}
+                  {days.map((d) => <Picker.Item key={d} label={String(d).padStart(2, "0")} value={d} />)}
                 </Picker>
               </PickerBox>
             </View>
@@ -340,13 +281,10 @@ export default function FundForm() {
           </Text>
         </Field>
 
-        {/* Speichern */}
-        <View style={{ marginTop: 8 }}>
-          <ButtonPrimary title="Speichern" onPress={handleSave} />
-        </View>
+        <ButtonPrimary title="Speichern" onPress={handleSave} />
       </ScrollView>
 
-      {/* Vollbild-Modal für Notiz */}
+      {/* Notiz-Modal */}
       <Modal
         visible={noteModalVisible}
         animationType="none"
@@ -354,18 +292,11 @@ export default function FundForm() {
         onRequestClose={() => setNoteModalVisible(false)}
       >
         <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
-          <View
-            style={{
-              paddingHorizontal: 16,
-              paddingTop: 12,
-              paddingBottom: 8,
-              borderBottomWidth: 1,
-              borderBottomColor: "#eee",
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
+          <View style={{
+            paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8,
+            borderBottomWidth: 1, borderBottomColor: "#eee",
+            flexDirection: "row", justifyContent: "space-between", alignItems: "center",
+          }}>
             <ButtonGhost title="Abbrechen" onPress={() => setNoteModalVisible(false)} />
             <Text style={{ fontWeight: "700", fontSize: 16 }}>Notiz bearbeiten</Text>
             <ButtonGhost
@@ -376,7 +307,6 @@ export default function FundForm() {
               }}
             />
           </View>
-
           <View style={{ flex: 1, padding: 16 }}>
             <TextInput
               autoFocus
@@ -385,19 +315,7 @@ export default function FundForm() {
               onChangeText={setNoteDraft}
               placeholder="z. B. Fund nach Sturm an der Spülsaumkante"
               textAlignVertical="top"
-              blurOnSubmit={false}
-              autoCorrect={false}
-              spellCheck={false}
-              autoComplete="off"
-              textContentType="none"
-              style={{
-                borderWidth: 1,
-                borderColor: "#bbb",
-                borderRadius: 10,
-                padding: 12,
-                flex: 1,
-                minHeight: 220,
-              }}
+              style={{ borderWidth: 1, borderColor: "#bbb", borderRadius: 10, padding: 12, flex: 1 }}
             />
           </View>
         </SafeAreaView>
